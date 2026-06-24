@@ -1,6 +1,7 @@
 "use client";
 
-import { Sparkles } from "lucide-react";
+import { useEffect, useState } from "react";
+import { Check, KeyRound, Loader2, Sparkles, X } from "lucide-react";
 import type { Format, Rules } from "@/lib/types";
 import {
   DURATION_PRESETS,
@@ -8,6 +9,7 @@ import {
   TIME_CONTROL_PRESETS,
   recommendedRounds,
 } from "@/lib/formats";
+import { clearAiKey, getAiKey, setAiKey } from "@/lib/ai";
 
 function NumberField({
   label,
@@ -71,6 +73,7 @@ export function RulesEditor({
   duration,
   onDuration,
   onSuggest,
+  suggesting,
 }: {
   rules: Rules;
   onChange: (patch: Partial<Rules>) => void;
@@ -81,19 +84,90 @@ export function RulesEditor({
   duration: number;
   onDuration: (n: number) => void;
   onSuggest: () => void;
+  suggesting?: boolean;
 }) {
   const isPresetTC = TIME_CONTROL_PRESETS.some((p) => p.value === rules.timeControl);
   const isCustomTiebreak = !TIEBREAK_OPTIONS.includes(rules.tiebreak);
 
+  const [aiKey, setAiKeyState] = useState("");
+  const [keyPanel, setKeyPanel] = useState(false);
+  const [keyInput, setKeyInput] = useState("");
+  useEffect(() => {
+    setAiKeyState(getAiKey());
+  }, []);
+
   return (
     <div className="space-y-5">
-      <button
-        type="button"
-        onClick={onSuggest}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-gold-300/40 bg-gold-500/10 px-4 py-2.5 text-sm font-semibold text-gold-100 transition hover:bg-gold-500/20"
-      >
-        <Sparkles className="h-4 w-4" /> Suggest rules for me
-      </button>
+      <div>
+        <button
+          type="button"
+          onClick={onSuggest}
+          disabled={suggesting}
+          className="flex w-full items-center justify-center gap-2 rounded-xl border border-gold-300/40 bg-gold-500/10 px-4 py-2.5 text-sm font-semibold text-gold-100 transition hover:bg-gold-500/20 disabled:opacity-60"
+        >
+          {suggesting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Sparkles className="h-4 w-4" />}
+          {suggesting ? "Thinking…" : aiKey ? "Suggest rules with Claude" : "Suggest rules for me"}
+        </button>
+        <div className="mt-1.5 flex items-center justify-between px-1 text-[11px]">
+          <span className="text-muted">
+            {aiKey ? "Powered by Claude (your API key)" : "Smart suggestions — no setup needed"}
+          </span>
+          <button
+            type="button"
+            onClick={() => setKeyPanel((o) => !o)}
+            className="inline-flex items-center gap-1 text-muted hover:text-gold-200"
+          >
+            <KeyRound className="h-3 w-3" />
+            {aiKey ? "AI on" : "Use AI"}
+          </button>
+        </div>
+        {keyPanel && (
+          <div className="mt-2 rounded-xl border border-ink-700/70 bg-ink-900/50 p-3">
+            {aiKey ? (
+              <div className="flex items-center justify-between gap-2">
+                <span className="inline-flex items-center gap-1.5 text-xs text-win">
+                  <Check className="h-3.5 w-3.5" /> Claude connected
+                </span>
+                <button
+                  type="button"
+                  onClick={() => {
+                    clearAiKey();
+                    setAiKeyState("");
+                    setKeyInput("");
+                  }}
+                  className="inline-flex items-center gap-1 text-xs text-muted hover:text-loss"
+                >
+                  <X className="h-3.5 w-3.5" /> Remove key
+                </button>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <input
+                  type="password"
+                  value={keyInput}
+                  onChange={(e) => setKeyInput(e.target.value)}
+                  placeholder="sk-ant-…  (your Anthropic API key)"
+                  className="input text-xs"
+                />
+                <div className="flex items-center justify-between gap-2">
+                  <span className="text-[11px] text-muted">Stored only in this browser. Used to call Claude directly.</span>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (!keyInput.trim()) return;
+                      setAiKey(keyInput);
+                      setAiKeyState(keyInput.trim());
+                    }}
+                    className="btn-subtle px-3 py-1.5 text-xs"
+                  >
+                    Save key
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       <div>
         <span className="field-label">How long should it run?</span>

@@ -10,6 +10,7 @@ import { RulesEditor } from "@/components/create/RulesEditor";
 import { createTournament, defaultRules, recommendedRounds, suggestRules } from "@/lib/formats";
 import type { Format, Rules } from "@/lib/types";
 import { commit } from "@/lib/store";
+import { getAiKey, suggestRulesAI } from "@/lib/ai";
 import { titleCase } from "@/lib/util";
 
 function Step({ n, title, hint }: { n: number; title: string; hint?: string }) {
@@ -41,16 +42,34 @@ export default function NewTournamentPage() {
   const [duration, setDuration] = useState(14);
   const [seedByRating, setSeedByRating] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const named = useMemo(() => players.filter((p) => p.name.trim()), [players]);
   const isElim = format === "single_elim" || format === "double_elim";
   const effRounds = rounds || recommendedRounds("swiss", Math.max(2, named.length));
 
-  function handleSuggest() {
-    const s = suggestRules(format, Math.max(2, named.length), duration);
-    setRules((r) => ({ ...r, ...s.rules }));
-    if (format === "swiss" && s.plannedRounds) setRounds(s.plannedRounds);
+  async function handleSuggest() {
+    setSuggesting(true);
+    try {
+      const count = Math.max(2, named.length);
+      const key = getAiKey();
+      let s = suggestRules(format, count, duration);
+      if (key) {
+        try {
+          s = await suggestRulesAI(
+            { name, format, playerNames: named.map((p) => p.name), playerCount: count, durationDays: duration },
+            key,
+          );
+        } catch {
+          s = suggestRules(format, count, duration); // graceful fallback
+        }
+      }
+      setRules((r) => ({ ...r, ...s.rules }));
+      if (format === "swiss" && s.plannedRounds) setRounds(s.plannedRounds);
+    } finally {
+      setSuggesting(false);
+    }
   }
 
   async function handleCreate() {
@@ -156,6 +175,7 @@ export default function NewTournamentPage() {
           duration={duration}
           onDuration={setDuration}
           onSuggest={handleSuggest}
+          suggesting={suggesting}
         />
       </section>
 
