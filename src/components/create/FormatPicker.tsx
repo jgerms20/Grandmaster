@@ -34,7 +34,7 @@ export function FormatPicker({
             }`}
           >
             {active && (
-              <span className="absolute right-3 top-3 grid h-5 w-5 place-items-center rounded-full bg-gold-sheen text-ink-950">
+              <span className="absolute right-3 top-3 grid h-5 w-5 place-items-center rounded-full bg-gold-sheen text-onaccent">
                 <Check className="h-3.5 w-3.5" strokeWidth={3} />
               </span>
             )}

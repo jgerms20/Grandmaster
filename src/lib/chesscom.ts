@@ -80,3 +80,11 @@ export async function lookupChessInfo(raw: string): Promise<ChessInfo> {
 export function chessProfileUrl(username?: string): string | undefined {
   return username ? `https://www.chess.com/member/${username.trim().toLowerCase()}` : undefined;
 }
+
+/** Accept a raw username, an @handle, or a full Chess.com profile URL. */
+export function parseChessHandle(input: string): string {
+  const s = input.trim();
+  const m = s.match(/chess\.com\/(?:member|members|player|@)?\/?([^/?#\s]+)/i);
+  if (m && m[1] && m[1] !== "member") return m[1];
+  return s.replace(/^@/, "");
+}

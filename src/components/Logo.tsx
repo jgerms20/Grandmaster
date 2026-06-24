@@ -4,7 +4,7 @@ import { Crown } from "lucide-react";
 export function Logo({ compact = false }: { compact?: boolean }) {
   return (
     <Link href="/" className="group inline-flex items-center gap-2.5">
-      <span className="relative grid h-9 w-9 place-items-center rounded-xl bg-gold-sheen text-ink-950 shadow-glow">
+      <span className="relative grid h-9 w-9 place-items-center rounded-xl bg-gold-sheen text-onaccent shadow-glow">
         <Crown className="h-5 w-5" strokeWidth={2.25} />
       </span>
       {!compact && (

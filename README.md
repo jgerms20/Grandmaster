@@ -13,8 +13,11 @@ Set up a tournament once, drop in your players, pick a format, and Grandmaster b
 - **Four formats, one base.** Round robin (the default), plus single elimination, double elimination, and Swiss — all selectable when you create a tournament.
 - **A bracket / standings table everyone can watch live.** Real‑time updates across every device.
 - **Match cards** show colors (♔/♚), live status, a ticking clock, move count, and a **Watch on Chess.com** link.
-- **Chess.com integration.** Type a username and it pulls the player's avatar, title, rating, and country flag from the public API; brackets can be auto‑seeded by rating.
-- **Rules that make sense.** Sensible defaults (time control, scoring, tiebreak) plus a free‑text *"describe your own rules"* box.
+- **ESPN-style bracket.** In organizer mode, just **click a player to advance them**.
+- **Chess.com integration.** Type a username *or paste a profile link* and it pulls the player's avatar, title, rating, and country flag from the public API; brackets can be auto‑seeded by rating.
+- **Smart rule suggestions.** One tap tailors the scoring, pace, tiebreak and a written rules summary to your format, field size and length — plus a free‑text *"describe your own rules"* box.
+- **Scheduling.** Pick a length (1 day → 4 weeks), see start/end dates and a live countdown. Daily time controls (defaulting to 3 days/move) alongside rapid/blitz/classical.
+- **Light & dark mode + accent colors.** Gold, emerald, sky, violet or rose — your pick, remembered per browser.
 - **Organizer mode.** A lightweight code gates editing, so viewers get a clean read‑only live view while the organizer records results with one tap.
 - **Zero‑config to start.** Runs immediately with a local store that syncs live across browser tabs. Add Supabase keys for real cross‑device realtime — no code changes.
 

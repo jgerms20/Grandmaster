@@ -4,8 +4,67 @@
 
 :root {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: "Cinzel", Georgia, "Times New Roman", serif;
+  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
   --font-mono: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, monospace;
+
+  /* ---- Dark theme (default) ---- */
+  --ink-950: 8 9 13;
+  --ink-900: 12 14 19;
+  --ink-850: 16 19 26;
+  --ink-800: 21 25 33;
+  --ink-700: 29 34 45;
+  --ink-600: 40 46 60;
+  --ink-500: 55 62 78;
+  --cream: 237 234 228;
+  --muted: 142 150 165;
+  --hairline: 255 255 255;
+  --board-light: 240 217 181;
+  --board-dark: 181 136 99;
+  --live: 240 86 63;
+  --win: 52 199 130;
+  --loss: 235 87 110;
+  --draw: 130 138 156;
+  --on-accent: 8 9 13;
+
+  /* ---- Accent: gold (default) ---- */
+  --gold-50: 251 246 233;
+  --gold-100: 244 230 191;
+  --gold-200: 236 210 138;
+  --gold-300: 227 189 87;
+  --gold-400: 216 167 58;
+  --gold-500: 194 143 42;
+  --gold-600: 156 112 32;
+}
+
+[data-theme="light"] {
+  --ink-950: 246 244 238; /* page */
+  --ink-900: 255 255 255; /* inputs */
+  --ink-850: 255 255 255; /* panels */
+  --ink-800: 243 240 233; /* insets */
+  --ink-700: 224 219 208; /* borders */
+  --ink-600: 203 197 184;
+  --ink-500: 150 144 130;
+  --cream: 28 27 24; /* primary text */
+  --muted: 99 104 114;
+  --hairline: 20 20 20;
+}
+
+/* ---- Alternate accents ---- */
+[data-accent="emerald"] {
+  --gold-50: 236 253 245; --gold-100: 209 250 229; --gold-200: 167 243 208;
+  --gold-300: 110 231 183; --gold-400: 52 211 153; --gold-500: 16 185 129; --gold-600: 5 150 105;
+}
+[data-accent="sky"] {
+  --gold-50: 240 249 255; --gold-100: 224 242 254; --gold-200: 186 230 253;
+  --gold-300: 125 211 252; --gold-400: 56 189 248; --gold-500: 14 165 233; --gold-600: 2 132 199;
+}
+[data-accent="violet"] {
+  --gold-50: 245 243 255; --gold-100: 237 233 254; --gold-200: 221 214 254;
+  --gold-300: 196 181 253; --gold-400: 167 139 250; --gold-500: 139 92 246; --gold-600: 124 58 237;
+}
+[data-accent="rose"] {
+  --gold-50: 255 241 242; --gold-100: 255 228 230; --gold-200: 254 205 211;
+  --gold-300: 253 164 175; --gold-400: 251 113 133; --gold-500: 244 63 94; --gold-600: 225 29 72;
 }
 
 @layer base {
@@ -15,18 +74,18 @@
   body {
     @apply bg-ink-950 text-cream font-sans antialiased;
     background-image:
-      radial-gradient(1100px 520px at 50% -120px, rgba(216, 167, 58, 0.10), transparent 60%),
-      radial-gradient(900px 500px at 100% 0, rgba(64, 90, 140, 0.08), transparent 55%);
+      radial-gradient(1100px 520px at 50% -160px, rgb(var(--gold-400) / 0.10), transparent 62%),
+      radial-gradient(900px 500px at 100% 0, rgb(var(--ink-500) / 0.10), transparent 55%);
     background-attachment: fixed;
     min-height: 100vh;
+    transition: background-color 0.3s ease, color 0.3s ease;
   }
   ::selection {
-    @apply bg-gold-300/30 text-cream;
+    @apply bg-gold-300/30;
   }
-  /* Slim, on-brand scrollbars */
   * {
     scrollbar-width: thin;
-    scrollbar-color: #333947 transparent;
+    scrollbar-color: rgb(var(--ink-600)) transparent;
   }
   *::-webkit-scrollbar {
     height: 8px;
@@ -39,13 +98,13 @@
 
 @layer components {
   .panel {
-    @apply rounded-2xl border border-ink-700/80 bg-ink-850/70 shadow-panel backdrop-blur-sm;
+    @apply rounded-2xl border border-ink-700/60 bg-ink-850/80 shadow-panel backdrop-blur-sm;
   }
   .panel-flat {
-    @apply rounded-xl border border-ink-700/70 bg-ink-850/60;
+    @apply rounded-xl border border-ink-700/55 bg-ink-850/60;
   }
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-ink-600/80 bg-ink-800/70 px-2.5 py-1 text-xs font-medium text-muted;
+    @apply inline-flex items-center gap-1.5 rounded-full border border-ink-600/60 bg-ink-800/60 px-2.5 py-1 text-xs font-medium text-muted;
   }
   .label {
     @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-muted;
@@ -55,27 +114,25 @@
       focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-300/60 disabled:cursor-not-allowed disabled:opacity-50;
   }
   .btn-gold {
-    @apply btn bg-gold-sheen text-ink-950 shadow-glow hover:brightness-110 active:brightness-95;
+    @apply btn bg-gold-sheen text-onaccent shadow-glow hover:brightness-[1.07] active:brightness-95;
   }
   .btn-ghost {
-    @apply btn border border-ink-600/80 bg-ink-800/50 text-cream hover:border-gold-300/50 hover:bg-ink-700/60;
+    @apply btn border border-ink-600/70 bg-ink-800/40 text-cream hover:border-gold-300/50 hover:bg-ink-700/50;
   }
   .btn-subtle {
-    @apply btn bg-ink-700/60 text-cream hover:bg-ink-600/70;
+    @apply btn bg-ink-700/55 text-cream hover:bg-ink-600/60;
   }
   .input {
-    @apply w-full rounded-xl border border-ink-600/80 bg-ink-900/70 px-3.5 py-2.5 text-sm text-cream
+    @apply w-full rounded-xl border border-ink-600/70 bg-ink-900/70 px-3.5 py-2.5 text-sm text-cream
       placeholder:text-muted/70 focus:border-gold-300/60 focus:outline-none focus:ring-2 focus:ring-gold-300/20;
   }
   .field-label {
     @apply mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-muted;
   }
-  /* Subtle checkerboard texture for hero / empty states */
+  /* Subtle dotted texture for hero / empty states (theme-aware) */
   .board-texture {
-    background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.022) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.022) 75%),
-      linear-gradient(45deg, rgba(255, 255, 255, 0.022) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.022) 75%);
-    background-size: 56px 56px;
-    background-position: 0 0, 28px 28px;
+    background-image: radial-gradient(rgb(var(--muted) / 0.10) 1px, transparent 1px);
+    background-size: 22px 22px;
   }
 }
 

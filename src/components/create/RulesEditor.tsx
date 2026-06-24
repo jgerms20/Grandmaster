@@ -1,7 +1,13 @@
 "use client";
 
+import { Sparkles } from "lucide-react";
 import type { Format, Rules } from "@/lib/types";
-import { recommendedRounds, TIME_CONTROL_PRESETS } from "@/lib/formats";
+import {
+  DURATION_PRESETS,
+  TIEBREAK_OPTIONS,
+  TIME_CONTROL_PRESETS,
+  recommendedRounds,
+} from "@/lib/formats";
 
 function NumberField({
   label,
@@ -26,6 +32,35 @@ function NumberField({
   );
 }
 
+function Chips({
+  options,
+  value,
+  onPick,
+}: {
+  options: { value: string; label: string }[];
+  value: string;
+  onPick: (v: string) => void;
+}) {
+  return (
+    <div className="flex flex-wrap gap-2">
+      {options.map((o) => (
+        <button
+          key={o.value}
+          type="button"
+          onClick={() => onPick(o.value)}
+          className={`rounded-xl border px-3 py-1.5 text-xs font-medium transition ${
+            value === o.value
+              ? "border-gold-300/60 bg-gold-500/15 text-gold-100"
+              : "border-ink-700/70 bg-ink-850/50 text-muted hover:border-ink-600"
+          }`}
+        >
+          {o.label}
+        </button>
+      ))}
+    </div>
+  );
+}
+
 export function RulesEditor({
   rules,
   onChange,
@@ -33,6 +68,9 @@ export function RulesEditor({
   rounds,
   onRounds,
   playerCount,
+  duration,
+  onDuration,
+  onSuggest,
 }: {
   rules: Rules;
   onChange: (patch: Partial<Rules>) => void;
@@ -40,29 +78,38 @@ export function RulesEditor({
   rounds: number;
   onRounds: (n: number) => void;
   playerCount: number;
+  duration: number;
+  onDuration: (n: number) => void;
+  onSuggest: () => void;
 }) {
-  const isPreset = TIME_CONTROL_PRESETS.some((p) => p.value === rules.timeControl);
+  const isPresetTC = TIME_CONTROL_PRESETS.some((p) => p.value === rules.timeControl);
+  const isCustomTiebreak = !TIEBREAK_OPTIONS.includes(rules.tiebreak);
+
   return (
     <div className="space-y-5">
+      <button
+        type="button"
+        onClick={onSuggest}
+        className="flex w-full items-center justify-center gap-2 rounded-xl border border-gold-300/40 bg-gold-500/10 px-4 py-2.5 text-sm font-semibold text-gold-100 transition hover:bg-gold-500/20"
+      >
+        <Sparkles className="h-4 w-4" /> Suggest rules for me
+      </button>
+
+      <div>
+        <span className="field-label">How long should it run?</span>
+        <Chips
+          options={DURATION_PRESETS.map((d) => ({ value: String(d.days), label: d.label }))}
+          value={String(duration)}
+          onPick={(v) => onDuration(Number(v))}
+        />
+      </div>
+
       <div>
         <span className="field-label">Time control</span>
         <div className="flex flex-wrap gap-2">
-          {TIME_CONTROL_PRESETS.map((p) => (
-            <button
-              key={p.value}
-              type="button"
-              onClick={() => onChange({ timeControl: p.value })}
-              className={`rounded-xl border px-3 py-1.5 text-xs font-medium transition ${
-                rules.timeControl === p.value
-                  ? "border-gold-300/60 bg-gold-500/15 text-gold-100"
-                  : "border-ink-700/70 bg-ink-850/50 text-muted hover:border-ink-600"
-              }`}
-            >
-              {p.label}
-            </button>
-          ))}
+          <Chips options={TIME_CONTROL_PRESETS} value={rules.timeControl} onPick={(v) => onChange({ timeControl: v })} />
           <input
-            value={isPreset ? "" : rules.timeControl}
+            value={isPresetTC ? "" : rules.timeControl}
             onChange={(e) => onChange({ timeControl: e.target.value })}
             placeholder="custom (e.g. 45|15)"
             className="w-36 rounded-xl border border-ink-700/70 bg-ink-900/60 px-3 py-1.5 text-xs text-cream placeholder:text-muted/60 focus:border-gold-300/60 focus:outline-none"
@@ -112,7 +159,7 @@ export function RulesEditor({
           }`}
         >
           <span
-            className={`absolute top-0.5 h-5 w-5 rounded-full bg-ink-950 transition ${
+            className={`absolute top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition ${
               rules.rematchOnDraw ? "left-[22px]" : "left-0.5"
             }`}
           />
@@ -121,11 +168,27 @@ export function RulesEditor({
 
       <div>
         <span className="field-label">Tiebreak</span>
-        <input
-          value={rules.tiebreak}
-          onChange={(e) => onChange({ tiebreak: e.target.value })}
-          className="input"
-        />
+        <select
+          value={isCustomTiebreak ? "__custom__" : rules.tiebreak}
+          onChange={(e) => onChange({ tiebreak: e.target.value === "__custom__" ? "" : e.target.value })}
+          className="input cursor-pointer"
+        >
+          {TIEBREAK_OPTIONS.map((o) => (
+            <option key={o} value={o}>
+              {o}
+            </option>
+          ))}
+          <option value="__custom__">Custom…</option>
+        </select>
+        {isCustomTiebreak && (
+          <input
+            value={rules.tiebreak}
+            onChange={(e) => onChange({ tiebreak: e.target.value })}
+            placeholder="Describe your tiebreak"
+            className="input mt-2"
+            autoFocus
+          />
+        )}
       </div>
 
       <div>
@@ -133,7 +196,7 @@ export function RulesEditor({
         <textarea
           value={rules.description}
           onChange={(e) => onChange({ description: e.target.value })}
-          rows={3}
+          rows={4}
           placeholder="e.g. Best of 3 in the final. No takebacks. Show up within 10 minutes or forfeit. Trash talk encouraged."
           className="input resize-y"
         />

@@ -1,7 +1,8 @@
 import Link from "next/link";
-import { ChevronRight, Crown, Radio, Users } from "lucide-react";
+import { CalendarDays, ChevronRight, Crown, Radio, Users } from "lucide-react";
 import type { Tournament } from "@/lib/types";
 import { computeStandings } from "@/lib/formats";
+import { countdownLabel } from "@/lib/util";
 import { FormatBadge } from "./FormatBadge";
 import { PlayerIdentity } from "./PlayerAvatar";
 
@@ -14,6 +15,7 @@ export function TournamentCard({ tournament: t }: { tournament: Tournament }) {
   const leader = computeStandings(t)[0];
   const leaderPlayer = leader ? t.players.find((p) => p.id === leader.playerId) : undefined;
   const champ = t.championId ? t.players.find((p) => p.id === t.championId) : undefined;
+  const cd = t.status !== "complete" ? countdownLabel(t.endDate) : null;
 
   return (
     <Link
@@ -31,6 +33,11 @@ export function TournamentCard({ tournament: t }: { tournament: Tournament }) {
             {live > 0 && (
               <span className="chip text-live">
                 <Radio className="h-3.5 w-3.5 animate-pulse-live" /> {live} live
+              </span>
+            )}
+            {cd && (
+              <span className="chip">
+                <CalendarDays className="h-3.5 w-3.5" /> {cd}
               </span>
             )}
           </div>

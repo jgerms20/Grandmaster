@@ -3,9 +3,9 @@
 import { useCallback, useEffect } from "react";
 import { AlertCircle, Check, Loader2, Plus, X } from "lucide-react";
 import type { ChessInfo } from "@/lib/chesscom";
-import { lookupChessInfo } from "@/lib/chesscom";
+import { lookupChessInfo, parseChessHandle } from "@/lib/chesscom";
 import { flagEmoji } from "@/components/PlayerAvatar";
-import { uid } from "@/lib/util";
+import { titleCase, uid } from "@/lib/util";
 
 export interface PlayerDraft {
   id: string;
@@ -38,7 +38,7 @@ function ChessPreview({ player }: { player: PlayerDraft }) {
           <Check className="h-3.5 w-3.5 text-win" />
         )}
         {player.info.title && (
-          <span className="rounded bg-gold-sheen px-1 text-[9px] font-bold text-ink-950">{player.info.title}</span>
+          <span className="rounded bg-gold-sheen px-1 text-[9px] font-bold text-onaccent">{player.info.title}</span>
         )}
         {player.info.rating != null && (
           <span className="font-mono text-[11px] text-gold-200">{player.info.rating}</span>
@@ -67,7 +67,7 @@ function Row({
     if (!u) return;
     let active = true;
     const handle = setTimeout(async () => {
-      const info = await lookupChessInfo(u);
+      const info = await lookupChessInfo(parseChessHandle(u));
       if (active) onPatch(player.id, { info, status: info.found ? "found" : "notfound" });
     }, 550);
     return () => {
@@ -85,6 +85,7 @@ function Row({
       <input
         value={player.name}
         onChange={(e) => onPatch(player.id, { name: e.target.value })}
+        onBlur={() => player.name && onPatch(player.id, { name: titleCase(player.name) })}
         placeholder={`Player ${index + 1} name`}
         className="min-w-0 flex-1 bg-transparent px-1 text-sm text-cream placeholder:text-muted/60 focus:outline-none"
       />
@@ -99,7 +100,10 @@ function Row({
               status: e.target.value.trim() ? "loading" : "idle",
             })
           }
-          placeholder="chess.com user"
+          onBlur={() =>
+            player.chessUsername && onPatch(player.id, { chessUsername: parseChessHandle(player.chessUsername) })
+          }
+          placeholder="chess.com user or link"
           className="w-32 bg-transparent px-1 text-sm text-gold-100/90 placeholder:text-muted/50 focus:outline-none sm:w-40"
         />
         <div className="w-24 shrink-0 text-right">

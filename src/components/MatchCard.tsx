@@ -32,7 +32,7 @@ function ColorChip({ color }: { color: "white" | "black" }) {
     <span
       title={isWhite ? "Plays White" : "Plays Black"}
       className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border text-[11px] ${
-        isWhite ? "border-ink-500 bg-board-light text-ink-900" : "border-ink-500 bg-ink-950 text-cream"
+        isWhite ? "border-black/20 bg-[#f0d9b5] text-[#3a2c1d]" : "border-white/15 bg-[#15171c] text-[#f1efe9]"
       }`}
     >
       {isWhite ? "♔" : "♚"}
@@ -101,20 +101,38 @@ export function MatchCard(props: Props) {
         {(["white", "black"] as const).map((side) => {
           const player = side === "white" ? white : black;
           const placeholder = side === "white" ? match.whitePlaceholder : match.blackPlaceholder;
+          const isWinner = winningSide === side;
           const isLoser = match.status === "done" && winningSide && winningSide !== "draw" && winningSide !== side;
+          const canPick = !!(organizer && playable && player);
           return (
-            <div key={side} className="flex items-center justify-between gap-2 rounded-lg bg-ink-900/40 px-2 py-1.5">
+            <div
+              key={side}
+              onClick={canPick ? () => props.onResult?.(match.id, side) : undefined}
+              role={canPick ? "button" : undefined}
+              title={canPick ? `Advance ${player?.name}` : undefined}
+              className={[
+                "group flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 transition",
+                isWinner ? "bg-win/10 ring-1 ring-win/30" : "bg-ink-900/40",
+                canPick ? "cursor-pointer hover:bg-gold-300/10 hover:ring-1 hover:ring-gold-300/40" : "",
+              ].join(" ")}
+            >
               <div className="flex min-w-0 items-center gap-2">
                 <ColorChip color={side} />
                 <PlayerIdentity
                   player={player}
                   placeholder={placeholder ?? (side === "white" ? "White" : "Black")}
                   size="sm"
-                  highlight={winningSide === side}
+                  highlight={isWinner}
                   dim={!!isLoser}
                 />
               </div>
-              <ResultMark side={side} result={match.result} />
+              {canPick && !match.result ? (
+                <span className="shrink-0 text-[10px] font-semibold text-gold-200 opacity-0 transition group-hover:opacity-100">
+                  Advance →
+                </span>
+              ) : (
+                <ResultMark side={side} result={match.result} />
+              )}
             </div>
           );
         })}
