@@ -1,0 +1,89 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
+  --font-display: "Cinzel", Georgia, "Times New Roman", serif;
+  --font-mono: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, monospace;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-ink-950 text-cream font-sans antialiased;
+    background-image:
+      radial-gradient(1100px 520px at 50% -120px, rgba(216, 167, 58, 0.10), transparent 60%),
+      radial-gradient(900px 500px at 100% 0, rgba(64, 90, 140, 0.08), transparent 55%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  ::selection {
+    @apply bg-gold-300/30 text-cream;
+  }
+  /* Slim, on-brand scrollbars */
+  * {
+    scrollbar-width: thin;
+    scrollbar-color: #333947 transparent;
+  }
+  *::-webkit-scrollbar {
+    height: 8px;
+    width: 8px;
+  }
+  *::-webkit-scrollbar-thumb {
+    @apply bg-ink-600 rounded-full;
+  }
+}
+
+@layer components {
+  .panel {
+    @apply rounded-2xl border border-ink-700/80 bg-ink-850/70 shadow-panel backdrop-blur-sm;
+  }
+  .panel-flat {
+    @apply rounded-xl border border-ink-700/70 bg-ink-850/60;
+  }
+  .chip {
+    @apply inline-flex items-center gap-1.5 rounded-full border border-ink-600/80 bg-ink-800/70 px-2.5 py-1 text-xs font-medium text-muted;
+  }
+  .label {
+    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-muted;
+  }
+  .btn {
+    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition
+      focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-300/60 disabled:cursor-not-allowed disabled:opacity-50;
+  }
+  .btn-gold {
+    @apply btn bg-gold-sheen text-ink-950 shadow-glow hover:brightness-110 active:brightness-95;
+  }
+  .btn-ghost {
+    @apply btn border border-ink-600/80 bg-ink-800/50 text-cream hover:border-gold-300/50 hover:bg-ink-700/60;
+  }
+  .btn-subtle {
+    @apply btn bg-ink-700/60 text-cream hover:bg-ink-600/70;
+  }
+  .input {
+    @apply w-full rounded-xl border border-ink-600/80 bg-ink-900/70 px-3.5 py-2.5 text-sm text-cream
+      placeholder:text-muted/70 focus:border-gold-300/60 focus:outline-none focus:ring-2 focus:ring-gold-300/20;
+  }
+  .field-label {
+    @apply mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-muted;
+  }
+  /* Subtle checkerboard texture for hero / empty states */
+  .board-texture {
+    background-image: linear-gradient(45deg, rgba(255, 255, 255, 0.022) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.022) 75%),
+      linear-gradient(45deg, rgba(255, 255, 255, 0.022) 25%, transparent 25%, transparent 75%, rgba(255, 255, 255, 0.022) 75%);
+    background-size: 56px 56px;
+    background-position: 0 0, 28px 28px;
+  }
+}
+
+@layer utilities {
+  .text-gradient-gold {
+    @apply bg-gold-sheen bg-clip-text text-transparent;
+  }
+  .animate-in {
+    @apply animate-fade-up;
+  }
+}
