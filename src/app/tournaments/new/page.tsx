@@ -7,14 +7,16 @@ import { ArrowLeft, Loader2, Sparkles, Trophy } from "lucide-react";
 import { FormatPicker } from "@/components/create/FormatPicker";
 import { PlayerEditor, emptyPlayer, type PlayerDraft } from "@/components/create/PlayerEditor";
 import { RulesEditor } from "@/components/create/RulesEditor";
-import { createTournament, defaultRules, recommendedRounds } from "@/lib/formats";
+import { createTournament, defaultRules, recommendedRounds, suggestRules } from "@/lib/formats";
 import type { Format, Rules } from "@/lib/types";
 import { commit } from "@/lib/store";
+import { getAiKey, suggestRulesAI } from "@/lib/ai";
+import { titleCase } from "@/lib/util";
 
 function Step({ n, title, hint }: { n: number; title: string; hint?: string }) {
   return (
     <div className="mb-4 flex items-center gap-3">
-      <span className="grid h-7 w-7 place-items-center rounded-full bg-gold-sheen text-sm font-bold text-ink-950">
+      <span className="grid h-7 w-7 place-items-center rounded-full bg-gold-sheen text-sm font-bold text-onaccent">
         {n}
       </span>
       <div>
@@ -37,13 +39,38 @@ export default function NewTournamentPage() {
   ]);
   const [rules, setRules] = useState<Rules>(() => defaultRules("round_robin"));
   const [rounds, setRounds] = useState(0);
+  const [duration, setDuration] = useState(14);
   const [seedByRating, setSeedByRating] = useState(true);
   const [creating, setCreating] = useState(false);
+  const [suggesting, setSuggesting] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const named = useMemo(() => players.filter((p) => p.name.trim()), [players]);
   const isElim = format === "single_elim" || format === "double_elim";
   const effRounds = rounds || recommendedRounds("swiss", Math.max(2, named.length));
+
+  async function handleSuggest() {
+    setSuggesting(true);
+    try {
+      const count = Math.max(2, named.length);
+      const key = getAiKey();
+      let s = suggestRules(format, count, duration);
+      if (key) {
+        try {
+          s = await suggestRulesAI(
+            { name, format, playerNames: named.map((p) => p.name), playerCount: count, durationDays: duration },
+            key,
+          );
+        } catch {
+          s = suggestRules(format, count, duration); // graceful fallback
+        }
+      }
+      setRules((r) => ({ ...r, ...s.rules }));
+      if (format === "swiss" && s.plannedRounds) setRounds(s.plannedRounds);
+    } finally {
+      setSuggesting(false);
+    }
+  }
 
   async function handleCreate() {
     if (named.length < 2) {
@@ -63,6 +90,7 @@ export default function NewTournamentPage() {
         players: ordered.map((p) => ({ name: p.name, chessUsername: p.chessUsername || undefined })),
         rules,
         plannedRounds: format === "swiss" ? effRounds : undefined,
+        durationDays: duration,
       });
       // Attach hydrated Chess.com info (order is preserved by createTournament).
       t.players.forEach((tp, i) => {
@@ -106,6 +134,7 @@ export default function NewTournamentPage() {
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
+            onBlur={() => name && setName(titleCase(name))}
             placeholder="Friday Night Arena"
             className="input"
             autoFocus
@@ -143,6 +172,10 @@ export default function NewTournamentPage() {
           rounds={effRounds}
           onRounds={setRounds}
           playerCount={Math.max(2, named.length)}
+          duration={duration}
+          onDuration={setDuration}
+          onSuggest={handleSuggest}
+          suggesting={suggesting}
         />
       </section>
 

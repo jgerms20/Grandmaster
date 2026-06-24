@@ -100,6 +100,12 @@ export interface Tournament {
   plannedRounds: number;
   currentRound: number;
   championId?: string | null;
+  /** ISO date the tournament started. */
+  startDate?: string;
+  /** ISO deadline by which it should wrap up (0-duration = open-ended). */
+  endDate?: string;
+  /** Intended length in days (0 = no deadline). */
+  durationDays?: number;
   createdAt: string;
   updatedAt: string;
   /** Lightweight edit gate — anyone with the code can run the tournament. */

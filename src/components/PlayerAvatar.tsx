@@ -41,7 +41,7 @@ export function Avatar({
 export function TitleTag({ title }: { title?: string }) {
   if (!title) return null;
   return (
-    <span className="rounded bg-gold-sheen px-1 py-0.5 text-[9px] font-bold leading-none text-ink-950">
+    <span className="rounded bg-gold-sheen px-1 py-0.5 text-[9px] font-bold leading-none text-onaccent">
       {title}
     </span>
   );

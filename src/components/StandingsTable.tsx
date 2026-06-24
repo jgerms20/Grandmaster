@@ -43,7 +43,7 @@ export function StandingsTable({ tournament }: { tournament: Tournament }) {
                 <td className="px-3 py-2.5">
                   <span
                     className={`grid h-6 w-6 place-items-center rounded-md text-xs font-bold ${
-                      r.rank === 1 ? "bg-gold-sheen text-ink-950" : "bg-ink-700/70 text-muted"
+                      r.rank === 1 ? "bg-gold-sheen text-onaccent" : "bg-ink-700/70 text-muted"
                     }`}
                   >
                     {r.rank}

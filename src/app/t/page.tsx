@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
+  CalendarDays,
   Check,
   Copy,
   Crown,
@@ -28,6 +29,7 @@ import { commit, useTournament } from "@/lib/store";
 import type { Match, MatchResult, Player, Tournament } from "@/lib/types";
 import { FORMAT_LABELS } from "@/lib/types";
 import { useOrganizer } from "@/lib/useOrganizer";
+import { countdownLabel, formatShortDate } from "@/lib/util";
 
 export default function TournamentPage() {
   return (
@@ -67,6 +69,7 @@ function TournamentView() {
   const playersMap = new Map<string, Player>(t.players.map((p) => [p.id, p]));
   const champ = t.championId ? playersMap.get(t.championId) : undefined;
   const liveCount = t.matches.filter((m) => m.status === "live").length;
+  const cd = countdownLabel(t.endDate);
 
   return (
     <div className="space-y-6">
@@ -83,6 +86,14 @@ function TournamentView() {
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
               <FormatBadge format={t.format} />
               <span className="chip"><Users className="h-3.5 w-3.5" /> {t.players.length} players</span>
+              {t.startDate && (
+                <span className="chip">
+                  <CalendarDays className="h-3.5 w-3.5" />
+                  {formatShortDate(t.startDate)}
+                  {t.endDate ? ` – ${formatShortDate(t.endDate)}` : ""}
+                </span>
+              )}
+              {cd && t.status !== "complete" && <span className="chip text-gold-200">{cd}</span>}
               {liveCount > 0 && (
                 <span className="chip text-live"><Radio className="h-3.5 w-3.5 animate-pulse-live" /> {liveCount} live now</span>
               )}
@@ -156,7 +167,7 @@ function ChampionBanner({ player }: { player: Player }) {
   return (
     <div className="panel board-texture relative flex items-center gap-4 overflow-hidden p-5">
       <div className="bg-ink-fade pointer-events-none absolute inset-0" />
-      <div className="relative grid h-14 w-14 place-items-center rounded-2xl bg-gold-sheen text-ink-950 shadow-glow">
+      <div className="relative grid h-14 w-14 place-items-center rounded-2xl bg-gold-sheen text-onaccent shadow-glow">
         <Crown className="h-7 w-7" />
       </div>
       <div className="relative">

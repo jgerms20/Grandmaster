@@ -33,6 +33,28 @@ export function clamp(n: number, lo: number, hi: number): number {
   return Math.max(lo, Math.min(hi, n));
 }
 
+/** Capitalize the first letter of each word, leaving the rest as typed. */
+export function titleCase(s: string): string {
+  return s.replace(/\S+/g, (w) => w.charAt(0).toUpperCase() + w.slice(1));
+}
+
+/** Short date like "Jun 24". */
+export function formatShortDate(iso?: string): string {
+  if (!iso) return "—";
+  return new Date(iso).toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+/** Friendly deadline countdown, e.g. "5 days left", "Ends today", "Ended". */
+export function countdownLabel(endIso?: string): string | null {
+  if (!endIso) return null;
+  const end = new Date(endIso).getTime();
+  const days = Math.ceil((end - Date.now()) / 86400000);
+  if (days < 0) return "Ended";
+  if (days === 0) return "Ends today";
+  if (days === 1) return "1 day left";
+  return `${days} days left`;
+}
+
 /** Human elapsed time, e.g. 1h 04m or 47s. */
 export function formatElapsed(fromIso?: string, toIso?: string): string {
   if (!fromIso) return "—";

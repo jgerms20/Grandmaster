@@ -1,41 +1,41 @@
 import type { Config } from "tailwindcss";
 
+// Colors resolve to CSS variables (RGB triplets) defined in globals.css, so
+// light/dark themes and accent colors can swap them at runtime via [data-theme]
+// and [data-accent] without touching component classes.
+const v = (name: string) => `rgb(var(${name}) / <alpha-value>)`;
+
 const config: Config = {
   content: ["./src/**/*.{ts,tsx,mdx}"],
   theme: {
     extend: {
       colors: {
-        // App chrome — deep, warm ink
         ink: {
-          950: "#08090d",
-          900: "#0b0d12",
-          850: "#0f1218",
-          800: "#14171f",
-          700: "#1b1f29",
-          600: "#252a36",
-          500: "#333947",
+          950: v("--ink-950"),
+          900: v("--ink-900"),
+          850: v("--ink-850"),
+          800: v("--ink-800"),
+          700: v("--ink-700"),
+          600: v("--ink-600"),
+          500: v("--ink-500"),
         },
-        // Grandmaster gold
         gold: {
-          50: "#fbf6e9",
-          100: "#f4e6bf",
-          200: "#ecd28a",
-          300: "#e3bd57",
-          400: "#d8a73a",
-          500: "#c28f2a",
-          600: "#9c7020",
+          50: v("--gold-50"),
+          100: v("--gold-100"),
+          200: v("--gold-200"),
+          300: v("--gold-300"),
+          400: v("--gold-400"),
+          500: v("--gold-500"),
+          600: v("--gold-600"),
         },
-        // Classic board squares
-        board: {
-          light: "#f0d9b5",
-          dark: "#b58863",
-        },
-        cream: "#efe7d6",
-        muted: "#8b93a2",
-        live: "#f0563f",
-        win: "#3fbf7f",
-        loss: "#e0526b",
-        draw: "#7a8294",
+        cream: v("--cream"),
+        muted: v("--muted"),
+        onaccent: v("--on-accent"),
+        board: { light: v("--board-light"), dark: v("--board-dark") },
+        live: v("--live"),
+        win: v("--win"),
+        loss: v("--loss"),
+        draw: v("--draw"),
       },
       fontFamily: {
         sans: ["var(--font-sans)", "ui-sans-serif", "system-ui", "sans-serif"],
@@ -43,12 +43,13 @@ const config: Config = {
         mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
       },
       boxShadow: {
-        panel: "0 1px 0 0 rgba(255,255,255,0.04) inset, 0 16px 40px -24px rgba(0,0,0,0.9)",
-        glow: "0 0 0 1px rgba(216,167,58,0.35), 0 8px 30px -10px rgba(216,167,58,0.35)",
+        panel: "0 1px 0 0 rgb(var(--hairline) / 0.6) inset, 0 12px 32px -20px rgb(0 0 0 / 0.55)",
+        glow: "0 0 0 1px rgb(var(--gold-400) / 0.35), 0 10px 34px -12px rgb(var(--gold-400) / 0.4)",
       },
       backgroundImage: {
-        "gold-sheen": "linear-gradient(135deg, #f4e6bf 0%, #d8a73a 45%, #9c7020 100%)",
-        "ink-fade": "radial-gradient(1200px 600px at 50% -10%, rgba(216,167,58,0.10), transparent 60%)",
+        "gold-sheen":
+          "linear-gradient(135deg, rgb(var(--gold-100)) 0%, rgb(var(--gold-400)) 48%, rgb(var(--gold-600)) 100%)",
+        "ink-fade": "radial-gradient(1200px 600px at 50% -10%, rgb(var(--gold-400) / 0.10), transparent 60%)",
       },
       keyframes: {
         "fade-up": {
