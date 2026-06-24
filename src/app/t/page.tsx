@@ -1,7 +1,8 @@
 "use client";
 
-import { use, useMemo, useState } from "react";
+import { Suspense, useMemo, useState } from "react";
 import Link from "next/link";
+import { useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   Check,
@@ -28,8 +29,16 @@ import type { Match, MatchResult, Player, Tournament } from "@/lib/types";
 import { FORMAT_LABELS } from "@/lib/types";
 import { useOrganizer } from "@/lib/useOrganizer";
 
-export default function TournamentPage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = use(params);
+export default function TournamentPage() {
+  return (
+    <Suspense fallback={<div className="panel h-64 animate-pulse bg-ink-800/40" />}>
+      <TournamentView />
+    </Suspense>
+  );
+}
+
+function TournamentView() {
+  const id = useSearchParams().get("id") ?? "";
   const { data: t, loading } = useTournament(id);
   const org = useOrganizer(t);
 
