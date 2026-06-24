@@ -17,7 +17,7 @@ export function TournamentCard({ tournament: t }: { tournament: Tournament }) {
 
   return (
     <Link
-      href={`/tournaments/${t.id}`}
+      href={`/t?id=${t.id}`}
       className="panel group block p-4 transition hover:border-gold-300/40 hover:shadow-glow"
     >
       <div className="mb-3 flex items-start justify-between gap-2">

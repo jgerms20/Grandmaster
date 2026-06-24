@@ -57,9 +57,21 @@ The whole tournament is stored as one JSONB row and the app subscribes to realti
 
 ---
 
-## Deploying
+## Deploying to GitHub Pages
 
-Deploy to [Vercel](https://vercel.com) (or any Next.js host). Add the two `NEXT_PUBLIC_SUPABASE_*` environment variables in your project settings and you're done. Outbound access to `api.chess.com` is required for avatars/ratings.
+The repo ships with a GitHub Actions workflow ([`.github/workflows/deploy.yml`](./.github/workflows/deploy.yml)) that builds the app as a static site and publishes it to Pages.
+
+**One-time setup:** in your repo, go to **Settings → Pages → Build and deployment** and set **Source = "GitHub Actions"**.
+
+After that, every push to `main` builds and deploys automatically (you can also run it manually from the **Actions** tab → *Deploy to GitHub Pages* → *Run workflow*). Your site goes live at:
+
+```
+https://<your-username>.github.io/<repo-name>/
+```
+
+The workflow figures out the base path from the repo name, so no hardcoding is needed. To enable **cross-device realtime** on the deployed site, add `NEXT_PUBLIC_SUPABASE_URL` and `NEXT_PUBLIC_SUPABASE_ANON_KEY` as repository **secrets** (Settings → Secrets and variables → Actions) — the workflow passes them through at build time. Without them the site runs in local (per-browser) mode.
+
+> Avatars/ratings call `api.chess.com` directly from the browser, so the deployed site needs no server. (Also deployable to Vercel or any static/Next host.)
 
 ---
 
@@ -87,7 +99,7 @@ The UI only ever talks to a single [`TournamentStore`](./src/lib/store/types.ts)
 
 ### Chess.com
 
-A cached server route at `/api/chesscom/[username]` proxies the public Chess.com API (avoids CORS, adds caching) and normalizes profile + ratings. See [`src/lib/chesscom.ts`](./src/lib/chesscom.ts).
+The public Chess.com API is called directly from the browser (it allows cross-origin requests), with an in-session cache, so the app stays fully static and Pages-friendly. Profiles + ratings are normalized in [`src/lib/chesscom.ts`](./src/lib/chesscom.ts).
 
 ---
 
@@ -98,8 +110,7 @@ src/
   app/
     page.tsx                     Dashboard (list of tournaments)
     tournaments/new/page.tsx     Create flow (format, players, rules)
-    tournaments/[id]/page.tsx    Live tournament view (the centerpiece)
-    api/chesscom/[username]/      Cached Chess.com proxy
+    t/page.tsx                   Live tournament view (the centerpiece, /t?id=…)
   components/                     UI: bracket, match card, standings, player chips…
   lib/
     formats/                     Pure tournament logic + tests

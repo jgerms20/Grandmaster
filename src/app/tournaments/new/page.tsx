@@ -81,7 +81,7 @@ export default function NewTournamentPage() {
       } catch {
         /* ignore */
       }
-      router.push(`/tournaments/${t.id}`);
+      router.push(`/t?id=${t.id}`);
     } catch (e) {
       setError("Something went wrong creating the tournament.");
       setCreating(false);
