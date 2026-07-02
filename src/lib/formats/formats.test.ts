@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import type { Format, Match, Player, Tournament } from "@/lib/types";
-import { createTournament, setMatchResult } from "./index";
+import { createTournament, setMatchResult, updateSettings } from "./index";
 import { roundRobinPairings, generateRoundRobin } from "./roundRobin";
 import { generateSingleElim } from "./singleElim";
 import { computeStandings } from "./standings";
@@ -70,6 +70,29 @@ describe("round robin", () => {
     expect(t.status).toBe("complete");
     expect(seedOf(t, t.championId!)).toBe(1); // top seed wins everything
     expect(generateRoundRobin(t.players)).toHaveLength(15); // C(6,2)
+  });
+
+  it("double round robin plays every pair twice with colors reversed", () => {
+    const t = createTournament({
+      name: "DRR",
+      format: "round_robin",
+      players: players(4),
+      cycles: 2,
+    });
+    expect(t.cycles).toBe(2);
+    expect(t.matches).toHaveLength(12); // 2 × C(4,2)
+    const byOrderedPair = new Map<string, number>();
+    for (const m of t.matches) {
+      const k = `${m.whiteId}>${m.blackId}`;
+      byOrderedPair.set(k, (byOrderedPair.get(k) ?? 0) + 1);
+    }
+    // 12 distinct ordered pairs, each exactly once → every rematch flips colors.
+    expect(byOrderedPair.size).toBe(12);
+    for (const c of byOrderedPair.values()) expect(c).toBe(1);
+    // And it plays out to completion.
+    const done = playOut(t);
+    expect(done.status).toBe("complete");
+    expect(seedOf(done, done.championId!)).toBe(1);
   });
 });
 
@@ -171,5 +194,33 @@ describe("standings", () => {
       const t = playOut(createTournament({ name: format, format, players: players(6) }));
       expect(t.championId, `format ${format}`).toBeTruthy();
     }
+  });
+});
+
+describe("settings", () => {
+  it("updates name, rules and deadline without touching matches", () => {
+    const t = createTournament({
+      name: "Before",
+      format: "round_robin",
+      players: players(4),
+      durationDays: 7,
+    });
+    const next = updateSettings(t, {
+      name: "After",
+      rules: { timeControl: "1 day", pointsWin: 3 },
+      durationDays: 14,
+    });
+    expect(next.name).toBe("After");
+    expect(next.rules.timeControl).toBe("1 day");
+    expect(next.rules.pointsWin).toBe(3);
+    expect(next.rules.pointsDraw).toBe(t.rules.pointsDraw); // untouched fields survive
+    expect(next.durationDays).toBe(14);
+    const days = (new Date(next.endDate!).getTime() - new Date(next.startDate!).getTime()) / 86400000;
+    expect(Math.round(days)).toBe(14);
+    expect(next.matches).toEqual(t.matches);
+
+    // Clearing the deadline removes endDate.
+    const open = updateSettings(next, { durationDays: 0 });
+    expect(open.endDate).toBeUndefined();
   });
 });

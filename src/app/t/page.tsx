@@ -1,8 +1,8 @@
 "use client";
 
-import { Suspense, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowLeft,
   CalendarDays,
@@ -13,23 +13,32 @@ import {
   KeyRound,
   Lock,
   Radio,
+  RefreshCw,
+  Repeat,
   Settings2,
-  Share2,
   Trophy,
+  UserPlus,
   Users,
 } from "lucide-react";
 import { BracketColumns, singleElimLabel, type BracketHandlers } from "@/components/Bracket";
+import { Confetti } from "@/components/Confetti";
 import { FormatBadge } from "@/components/FormatBadge";
 import { MatchCard } from "@/components/MatchCard";
 import { PlayerIdentity } from "@/components/PlayerAvatar";
+import { SettingsModal } from "@/components/SettingsModal";
+import { ShareModal } from "@/components/ShareModal";
 import { StandingsTable } from "@/components/StandingsTable";
-import { chessProfileUrl } from "@/lib/chesscom";
-import { setMatchLive, setMatchMeta, setMatchResult } from "@/lib/formats";
+import {
+  chessProfileUrl,
+  findCurrentDailyGame,
+  findRecentFinishedGame,
+  lookupChessInfo,
+} from "@/lib/chesscom";
+import { setMatchLive, setMatchMeta, setMatchResult, updateSettings } from "@/lib/formats";
 import { commit, useTournament } from "@/lib/store";
-import type { Match, MatchResult, Player, Tournament } from "@/lib/types";
-import { FORMAT_LABELS } from "@/lib/types";
+import type { Match, Player, Tournament } from "@/lib/types";
 import { useOrganizer } from "@/lib/useOrganizer";
-import { countdownLabel, formatShortDate } from "@/lib/util";
+import { countdownLabel, formatShortDate, nowIso } from "@/lib/util";
 
 export default function TournamentPage() {
   return (
@@ -40,9 +49,44 @@ export default function TournamentPage() {
 }
 
 function TournamentView() {
-  const id = useSearchParams().get("id") ?? "";
+  const params = useSearchParams();
+  const id = params.get("id") ?? "";
+  const inviteKey = params.get("key");
+  const router = useRouter();
+  const pathname = usePathname();
   const { data: t, loading } = useTournament(id);
   const org = useOrganizer(t);
+  const [showInvite, setShowInvite] = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
+  const [celebrate, setCelebrate] = useState(false);
+  const autoUnlocked = useRef(false);
+
+  // Organizer link (?key=CODE): unlock automatically, then strip the key from the URL.
+  useEffect(() => {
+    if (!t || !inviteKey || autoUnlocked.current) return;
+    autoUnlocked.current = true;
+    if (inviteKey === t.adminCode) org.unlock(inviteKey);
+    router.replace(`${pathname}?id=${id}`);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [t, inviteKey]);
+
+  // Confetti the first time this browser session sees the champion.
+  const status = t?.status;
+  const championId = t?.championId;
+  useEffect(() => {
+    if (!t || status !== "complete" || !championId) return;
+    const k = `grandmaster:celebrated:${t.id}`;
+    try {
+      if (sessionStorage.getItem(k)) return;
+      sessionStorage.setItem(k, "1");
+    } catch {
+      /* still celebrate */
+    }
+    setCelebrate(true);
+    const timer = setTimeout(() => setCelebrate(false), 7000);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [status, championId]);
 
   if (loading) {
     return <div className="panel h-64 animate-pulse bg-ink-800/40" />;
@@ -50,7 +94,7 @@ function TournamentView() {
   if (!t) {
     return (
       <div className="panel flex flex-col items-center gap-4 p-12 text-center">
-        <p className="font-display text-xl text-cream">Tournament not found</p>
+        <p className="font-display text-xl font-bold text-cream">Tournament not found</p>
         <p className="text-sm text-muted">It may have been created in another browser, or removed.</p>
         <Link href="/" className="btn-gold">
           Back to tournaments
@@ -59,14 +103,51 @@ function TournamentView() {
     );
   }
 
+  const playersMap = new Map<string, Player>(t.players.map((p) => [p.id, p]));
+
+  /** Pull the real game between the two players from Chess.com. */
+  const onSync = async (mid: string): Promise<string | null> => {
+    const m = t.matches.find((x) => x.id === mid);
+    if (!m) return "Match not found";
+    const w = m.whiteId ? playersMap.get(m.whiteId) : null;
+    const b = m.blackId ? playersMap.get(m.blackId) : null;
+    if (!w?.chessUsername || !b?.chessUsername) return "Both players need a Chess.com username";
+    const wu = w.chessUsername.trim().toLowerCase();
+    const since = new Date(m.startedAt ?? t.startDate ?? t.createdAt).getTime();
+
+    const finished = await findRecentFinishedGame(w.chessUsername, b.chessUsername, since);
+    if (finished && m.status !== "done") {
+      // Map the game's colors onto our color assignment (they may be reversed).
+      const same = finished.whiteUsername === wu;
+      const result =
+        finished.result === "draw" ? "draw" : same ? finished.result : finished.result === "white" ? "black" : "white";
+      await commit(setMatchResult(t, mid, result, { gameUrl: finished.url, moves: finished.moves }));
+      return null;
+    }
+
+    const current = await findCurrentDailyGame(w.chessUsername, b.chessUsername);
+    if (current) {
+      const toMoveUser = current.turn === "white" ? current.whiteUsername : current.blackUsername;
+      let next = setMatchMeta(t, mid, {
+        gameUrl: current.url,
+        moves: current.moves,
+        turn: toMoveUser === wu ? "white" : "black",
+      });
+      next = setMatchLive(next, mid, true);
+      await commit(next);
+      return null;
+    }
+    return "No Chess.com game found between these two yet";
+  };
+
   const handlers: BracketHandlers = {
     organizer: org.unlocked,
     onResult: (mid, r) => commit(setMatchResult(t, mid, r)),
     onLive: (mid, live) => commit(setMatchLive(t, mid, live)),
     onMeta: (mid, meta) => commit(setMatchMeta(t, mid, meta)),
+    onSync,
   };
 
-  const playersMap = new Map<string, Player>(t.players.map((p) => [p.id, p]));
   const champ = t.championId ? playersMap.get(t.championId) : undefined;
   const liveCount = t.matches.filter((m) => m.status === "live").length;
   const cd = countdownLabel(t.endDate);
@@ -82,9 +163,12 @@ function TournamentView() {
         <div className="bg-ink-fade pointer-events-none absolute inset-0" />
         <div className="relative flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="font-display text-3xl font-bold text-cream sm:text-4xl">{t.name}</h1>
+            <h1 className="font-display text-3xl font-black tracking-tight text-cream sm:text-4xl">{t.name}</h1>
             <div className="mt-2.5 flex flex-wrap items-center gap-2">
               <FormatBadge format={t.format} />
+              {t.cycles === 2 && (
+                <span className="chip"><Repeat className="h-3.5 w-3.5 text-gold-200" /> Double — everyone twice</span>
+              )}
               <span className="chip"><Users className="h-3.5 w-3.5" /> {t.players.length} players</span>
               {t.startDate && (
                 <span className="chip">
@@ -100,7 +184,21 @@ function TournamentView() {
               <StatusChip status={t.status} />
             </div>
           </div>
-          <ShareButton />
+          <div className="flex shrink-0 items-center gap-2">
+            {org.unlocked && (
+              <button
+                onClick={() => setShowSettings(true)}
+                className="btn-ghost px-3"
+                title="Tournament settings"
+              >
+                <Settings2 className="h-4 w-4" />
+                <span className="hidden sm:inline">Settings</span>
+              </button>
+            )}
+            <button onClick={() => setShowInvite(true)} className="btn-gold">
+              <UserPlus className="h-4 w-4" /> Invite
+            </button>
+          </div>
         </div>
       </header>
 
@@ -136,9 +234,19 @@ function TournamentView() {
 
         <aside className="space-y-6">
           <RulesPanel tournament={t} />
-          <PlayersPanel tournament={t} />
+          <PlayersPanel tournament={t} organizer={org.unlocked} />
         </aside>
       </div>
+
+      <Confetti fire={celebrate} />
+      {showInvite && <ShareModal tournament={t} onClose={() => setShowInvite(false)} />}
+      {showSettings && (
+        <SettingsModal
+          tournament={t}
+          onClose={() => setShowSettings(false)}
+          onSave={(patch) => commit(updateSettings(t, patch))}
+        />
+      )}
     </div>
   );
 }
@@ -165,40 +273,16 @@ function StatusChip({ status }: { status: Tournament["status"] }) {
 
 function ChampionBanner({ player }: { player: Player }) {
   return (
-    <div className="panel board-texture relative flex items-center gap-4 overflow-hidden p-5">
+    <div className="panel board-8 relative flex items-center gap-4 overflow-hidden p-5">
       <div className="bg-ink-fade pointer-events-none absolute inset-0" />
-      <div className="relative grid h-14 w-14 place-items-center rounded-2xl bg-gold-sheen text-onaccent shadow-glow">
+      <div className="animate-crown relative grid h-14 w-14 place-items-center rounded-2xl bg-gold-sheen text-onaccent shadow-glow">
         <Crown className="h-7 w-7" />
       </div>
       <div className="relative">
         <p className="label text-gold-200">Champion</p>
-        <p className="font-display text-2xl font-bold text-cream">{player.name}</p>
+        <p className="font-display text-2xl font-black tracking-tight text-cream">{player.name}</p>
       </div>
     </div>
-  );
-}
-
-function ShareButton() {
-  const [copied, setCopied] = useState(false);
-  const share = async () => {
-    try {
-      const url = window.location.href;
-      if (navigator.share) {
-        await navigator.share({ title: "Grandmaster tournament", url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 1800);
-      }
-    } catch {
-      /* user dismissed */
-    }
-  };
-  return (
-    <button onClick={share} className="btn-ghost shrink-0">
-      {copied ? <Check className="h-4 w-4 text-win" /> : <Share2 className="h-4 w-4" />}
-      {copied ? "Link copied" : "Share"}
-    </button>
   );
 }
 
@@ -319,6 +403,7 @@ function DoubleElim({
               onResult={handlers.onResult}
               onLive={handlers.onLive}
               onMeta={handlers.onMeta}
+              onSync={handlers.onSync}
             />
           </div>
         </Panel>
@@ -370,6 +455,7 @@ function Rounds({
                   onResult={handlers.onResult}
                   onLive={handlers.onLive}
                   onMeta={handlers.onMeta}
+                  onSync={handlers.onSync}
                 />
               ))}
             </div>
@@ -412,11 +498,50 @@ function Row({ label, value, mono }: { label: string; value: string; mono?: bool
   );
 }
 
-function PlayersPanel({ tournament: t }: { tournament: Tournament }) {
+function PlayersPanel({ tournament: t, organizer }: { tournament: Tournament; organizer: boolean }) {
   const ordered = [...t.players].sort((a, b) => a.seed - b.seed);
+  const [busy, setBusy] = useState(false);
+  const hasUsernames = t.players.some((p) => p.chessUsername);
+
+  const refresh = async () => {
+    if (busy) return;
+    setBusy(true);
+    try {
+      const next = structuredClone(t);
+      await Promise.all(
+        next.players.map(async (p) => {
+          if (!p.chessUsername) return;
+          const info = await lookupChessInfo(p.chessUsername);
+          if (!info.found) return;
+          p.avatarUrl = info.avatarUrl;
+          p.rating = info.rating;
+          p.title = info.title;
+          p.countryCode = info.countryCode;
+          p.profileUrl = info.profileUrl;
+        }),
+      );
+      next.updatedAt = nowIso();
+      await commit(next);
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <div className="panel p-4">
-      <h3 className="mb-3 font-display text-lg font-semibold text-cream">Players</h3>
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="font-display text-lg font-bold text-cream">Players</h3>
+        {organizer && hasUsernames && (
+          <button
+            onClick={refresh}
+            disabled={busy}
+            title="Refresh avatars & ratings from Chess.com"
+            className="inline-flex items-center gap-1 text-[11px] font-bold text-muted transition hover:text-gold-200 disabled:opacity-60"
+          >
+            <RefreshCw className={`h-3.5 w-3.5 ${busy ? "animate-spin" : ""}`} /> Ratings
+          </button>
+        )}
+      </div>
       <ul className="space-y-2">
         {ordered.map((p) => {
           const url = p.profileUrl ?? chessProfileUrl(p.chessUsername);

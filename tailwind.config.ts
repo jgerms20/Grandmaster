@@ -43,7 +43,7 @@ const config: Config = {
         mono: ["var(--font-mono)", "ui-monospace", "SFMono-Regular", "monospace"],
       },
       boxShadow: {
-        panel: "0 1px 0 0 rgb(var(--hairline) / 0.6) inset, 0 12px 32px -20px rgb(0 0 0 / 0.55)",
+        panel: "0 1px 0 0 rgb(var(--hairline) / 0.05) inset, 0 14px 36px -22px rgb(0 0 0 / 0.6)",
         glow: "0 0 0 1px rgb(var(--gold-400) / 0.35), 0 10px 34px -12px rgb(var(--gold-400) / 0.4)",
       },
       backgroundImage: {

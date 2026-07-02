@@ -6,12 +6,15 @@ import {
   ChevronDown,
   ExternalLink,
   Link2,
+  Loader2,
   Radio,
+  RefreshCw,
   RotateCcw,
+  Swords,
   Trophy,
 } from "lucide-react";
 import type { Match, MatchResult, Player } from "@/lib/types";
-import { chessProfileUrl } from "@/lib/chesscom";
+import { challengeUrl, chessProfileUrl } from "@/lib/chesscom";
 import { MatchClock } from "./Clock";
 import { PlayerIdentity } from "./PlayerAvatar";
 
@@ -24,6 +27,8 @@ interface Props {
   onResult?: (id: string, r: MatchResult) => void;
   onLive?: (id: string, live: boolean) => void;
   onMeta?: (id: string, meta: { gameUrl?: string; moves?: number }) => void;
+  /** Pull the real game from Chess.com. Resolves to a message, or null on success. */
+  onSync?: (id: string) => Promise<string | null>;
 }
 
 function ColorChip({ color }: { color: "white" | "black" }) {
@@ -32,7 +37,7 @@ function ColorChip({ color }: { color: "white" | "black" }) {
     <span
       title={isWhite ? "Plays White" : "Plays Black"}
       className={`grid h-5 w-5 shrink-0 place-items-center rounded-md border text-[11px] ${
-        isWhite ? "border-black/20 bg-[#f0d9b5] text-[#3a2c1d]" : "border-white/15 bg-[#15171c] text-[#f1efe9]"
+        isWhite ? "border-black/20 bg-[#f0d9b5] text-[#3a2c1d]" : "border-white/15 bg-[#15130f] text-[#f1efe9]"
       }`}
     >
       {isWhite ? "♔" : "♚"}
@@ -47,10 +52,8 @@ function StatusPill({ status }: { status: Match["status"] }) {
         <span className="h-1.5 w-1.5 animate-pulse-live rounded-full bg-live" /> Live
       </span>
     );
-  if (status === "done")
-    return <span className="chip text-[11px]">Final</span>;
-  if (status === "bye")
-    return <span className="chip text-[11px] text-gold-200">Bye</span>;
+  if (status === "done") return <span className="chip text-[11px]">Final</span>;
+  if (status === "bye") return <span className="chip text-[11px] text-gold-200">Bye</span>;
   return <span className="chip text-[11px] text-muted">Upcoming</span>;
 }
 
@@ -71,21 +74,35 @@ export function MatchCard(props: Props) {
   const [open, setOpen] = useState(false);
   const [url, setUrl] = useState(match.gameUrl ?? "");
   const [moves, setMoves] = useState(match.moves?.toString() ?? "");
+  const [syncing, setSyncing] = useState(false);
+  const [note, setNote] = useState<string | null>(null);
 
   if (match.status === "dead") return null;
 
-  const playable =
-    (match.status === "pending" || match.status === "live") && !!white && !!black;
+  const playable = (match.status === "pending" || match.status === "live") && !!white && !!black;
   const watchUrl =
-    match.gameUrl ||
-    chessProfileUrl(white?.chessUsername) ||
-    chessProfileUrl(black?.chessUsername);
-
+    match.gameUrl || chessProfileUrl(white?.chessUsername) || chessProfileUrl(black?.chessUsername);
+  const canChallenge = playable && !!white?.chessUsername && !!black?.chessUsername;
   const winningSide = match.result;
+
+  async function handleSync() {
+    if (!props.onSync || syncing) return;
+    setSyncing(true);
+    setNote(null);
+    try {
+      const msg = await props.onSync(match.id);
+      if (msg) {
+        setNote(msg);
+        setTimeout(() => setNote(null), 5000);
+      }
+    } finally {
+      setSyncing(false);
+    }
+  }
 
   return (
     <div
-      className={`panel-flat animate-in p-3 transition ${
+      className={`panel-flat animate-in p-3 transition hover:border-ink-600/70 ${
         match.status === "live" ? "ring-1 ring-live/40" : ""
       }`}
     >
@@ -102,7 +119,9 @@ export function MatchCard(props: Props) {
           const player = side === "white" ? white : black;
           const placeholder = side === "white" ? match.whitePlaceholder : match.blackPlaceholder;
           const isWinner = winningSide === side;
-          const isLoser = match.status === "done" && winningSide && winningSide !== "draw" && winningSide !== side;
+          const isLoser =
+            match.status === "done" && winningSide && winningSide !== "draw" && winningSide !== side;
+          const toMove = match.status === "live" && match.turn === side;
           const canPick = !!(organizer && playable && player);
           return (
             <div
@@ -112,7 +131,8 @@ export function MatchCard(props: Props) {
               title={canPick ? `Advance ${player?.name}` : undefined}
               className={[
                 "group flex items-center justify-between gap-2 rounded-lg px-2 py-1.5 transition",
-                isWinner ? "bg-win/10 ring-1 ring-win/30" : "bg-ink-900/40",
+                isWinner ? "bg-win/10 ring-1 ring-win/30" : "bg-ink-900/60",
+                toMove ? "ring-1 ring-gold-300/40" : "",
                 canPick ? "cursor-pointer hover:bg-gold-300/10 hover:ring-1 hover:ring-gold-300/40" : "",
               ].join(" ")}
             >
@@ -126,9 +146,20 @@ export function MatchCard(props: Props) {
                   dim={!!isLoser}
                 />
               </div>
-              {canPick && !match.result ? (
-                <span className="shrink-0 text-[10px] font-semibold text-gold-200 opacity-0 transition group-hover:opacity-100">
-                  Advance →
+              {toMove && !canPick ? (
+                <span className="shrink-0 text-[10px] font-bold uppercase tracking-wide text-gold-200">
+                  To move
+                </span>
+              ) : canPick && !match.result ? (
+                <span className="flex shrink-0 items-center gap-1.5">
+                  {toMove && (
+                    <span className="text-[10px] font-bold uppercase tracking-wide text-gold-200/80">
+                      To move
+                    </span>
+                  )}
+                  <span className="text-[10px] font-bold text-gold-200 opacity-0 transition group-hover:opacity-100">
+                    Advance →
+                  </span>
                 </span>
               ) : (
                 <ResultMark side={side} result={match.result} />
@@ -140,16 +171,27 @@ export function MatchCard(props: Props) {
 
       <div className="mt-2.5 flex flex-wrap items-center justify-between gap-2">
         <div className="flex items-center gap-3 text-[11px] text-muted">
-          {match.moves != null && <span>{match.moves} moves</span>}
+          {match.moves != null && <span className="font-mono">{match.moves} moves</span>}
           {watchUrl && (
             <a
               href={watchUrl}
               target="_blank"
               rel="noreferrer"
-              className="inline-flex items-center gap-1 font-medium text-gold-200 hover:text-gold-100"
+              className="inline-flex items-center gap-1 font-semibold text-gold-200 hover:text-gold-100"
             >
               <ExternalLink className="h-3 w-3" />
               {match.gameUrl ? "Watch game" : "Chess.com"}
+            </a>
+          )}
+          {canChallenge && !match.gameUrl && (
+            <a
+              href={challengeUrl(black!.chessUsername)}
+              target="_blank"
+              rel="noreferrer"
+              title={`Open a Chess.com challenge against ${black!.name}`}
+              className="inline-flex items-center gap-1 font-semibold text-muted hover:text-gold-200"
+            >
+              <Swords className="h-3 w-3" /> Play now
             </a>
           )}
         </div>
@@ -158,15 +200,26 @@ export function MatchCard(props: Props) {
           <div className="flex items-center gap-1.5">
             {playable && (
               <>
+                {props.onSync && (
+                  <button
+                    onClick={handleSync}
+                    disabled={syncing}
+                    title="Find this game on Chess.com — attaches the link, move count and result"
+                    className="inline-flex items-center gap-1 rounded-lg border border-ink-600/60 px-2 py-1 text-[11px] font-bold text-muted transition hover:border-gold-300/50 hover:text-gold-200 disabled:opacity-60"
+                  >
+                    {syncing ? <Loader2 className="h-3 w-3 animate-spin" /> : <RefreshCw className="h-3 w-3" />}
+                    Sync
+                  </button>
+                )}
                 {match.status !== "live" && (
                   <button
                     onClick={() => props.onLive?.(match.id, true)}
-                    className="inline-flex items-center gap-1 rounded-lg border border-ink-600/70 px-2 py-1 text-[11px] font-semibold text-muted hover:border-live/50 hover:text-live"
+                    className="inline-flex items-center gap-1 rounded-lg border border-ink-600/60 px-2 py-1 text-[11px] font-bold text-muted hover:border-live/50 hover:text-live"
                   >
-                    <Radio className="h-3 w-3" /> Go live
+                    <Radio className="h-3 w-3" /> Live
                   </button>
                 )}
-                <div className="inline-flex overflow-hidden rounded-lg border border-ink-600/70">
+                <div className="inline-flex overflow-hidden rounded-lg border border-ink-600/60">
                   <button
                     onClick={() => props.onResult?.(match.id, "white")}
                     title={`${white?.name ?? "White"} wins`}
@@ -177,7 +230,7 @@ export function MatchCard(props: Props) {
                   <button
                     onClick={() => props.onResult?.(match.id, "draw")}
                     title="Draw"
-                    className="border-x border-ink-600/70 px-2 py-1 text-[11px] font-bold text-cream hover:bg-draw/20"
+                    className="border-x border-ink-600/60 px-2 py-1 text-[11px] font-bold text-cream hover:bg-draw/20"
                   >
                     ½
                   </button>
@@ -194,14 +247,14 @@ export function MatchCard(props: Props) {
             {match.status === "done" && (
               <button
                 onClick={() => props.onResult?.(match.id, null)}
-                className="inline-flex items-center gap-1 rounded-lg border border-ink-600/70 px-2 py-1 text-[11px] text-muted hover:border-gold-300/50 hover:text-gold-200"
+                className="inline-flex items-center gap-1 rounded-lg border border-ink-600/60 px-2 py-1 text-[11px] text-muted hover:border-gold-300/50 hover:text-gold-200"
               >
                 <RotateCcw className="h-3 w-3" /> Reset
               </button>
             )}
             <button
               onClick={() => setOpen((o) => !o)}
-              className="grid h-7 w-7 place-items-center rounded-lg border border-ink-600/70 text-muted hover:text-cream"
+              className="grid h-7 w-7 place-items-center rounded-lg border border-ink-600/60 text-muted hover:text-cream"
               title="Game details"
             >
               <ChevronDown className={`h-3.5 w-3.5 transition ${open ? "rotate-180" : ""}`} />
@@ -210,9 +263,11 @@ export function MatchCard(props: Props) {
         )}
       </div>
 
+      {note && <p className="mt-2 text-[11px] font-semibold text-gold-200/90">{note}</p>}
+
       {organizer && open && (
         <div className="mt-2.5 grid gap-2 border-t border-ink-700/60 pt-2.5 sm:grid-cols-[1fr_auto_auto]">
-          <div className="flex items-center gap-1.5 rounded-lg border border-ink-600/70 bg-ink-900/60 px-2">
+          <div className="flex items-center gap-1.5 rounded-lg border border-ink-600/60 bg-ink-900/70 px-2">
             <Link2 className="h-3.5 w-3.5 text-muted" />
             <input
               value={url}
@@ -225,7 +280,7 @@ export function MatchCard(props: Props) {
             value={moves}
             onChange={(e) => setMoves(e.target.value.replace(/\D/g, ""))}
             placeholder="moves"
-            className="w-20 rounded-lg border border-ink-600/70 bg-ink-900/60 px-2 py-1.5 text-xs text-cream placeholder:text-muted/60 focus:outline-none"
+            className="w-20 rounded-lg border border-ink-600/60 bg-ink-900/70 px-2 py-1.5 text-xs text-cream placeholder:text-muted/60 focus:outline-none"
           />
           <button
             onClick={() =>

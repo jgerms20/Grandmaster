@@ -8,7 +8,7 @@ export type Accent = "gold" | "emerald" | "sky" | "violet" | "rose";
 export const ACCENTS: Accent[] = ["gold", "emerald", "sky", "violet", "rose"];
 export const ACCENT_HEX: Record<Accent, string> = {
   gold: "#d8a73a",
-  emerald: "#34d399",
+  emerald: "#81b64c", // "club green" — the chess.com family
   sky: "#38bdf8",
   violet: "#a78bfa",
   rose: "#fb7185",
