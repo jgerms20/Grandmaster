@@ -4,67 +4,78 @@
 
 :root {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", sans-serif;
-  --font-display: "Fraunces", Georgia, "Times New Roman", serif;
+  --font-display: "Archivo", "Inter", ui-sans-serif, system-ui, sans-serif;
   --font-mono: ui-monospace, "SFMono-Regular", "JetBrains Mono", Menlo, monospace;
 
-  /* ---- Dark theme (default) ---- */
-  --ink-950: 8 9 13;
-  --ink-900: 12 14 19;
-  --ink-850: 16 19 26;
-  --ink-800: 21 25 33;
-  --ink-700: 29 34 45;
-  --ink-600: 40 46 60;
-  --ink-500: 55 62 78;
-  --cream: 237 234 228;
-  --muted: 142 150 165;
+  /* ---- Dark theme (default) — warm charcoal, chess-club at midnight ---- */
+  --ink-950: 31 29 26; /* page        #1f1d1a */
+  --ink-900: 38 36 33; /* wells/input #262421 */
+  --ink-850: 49 46 43; /* panels      #312e2b */
+  --ink-800: 60 57 53; /* insets      #3c3935 */
+  --ink-700: 71 68 63; /* borders     #47443f */
+  --ink-600: 88 84 78; /* strong brd  #58544e */
+  --ink-500: 110 106 98;
+  --cream: 240 238 232;
+  --muted: 163 159 150;
   --hairline: 255 255 255;
   --board-light: 240 217 181;
   --board-dark: 181 136 99;
-  --live: 240 86 63;
-  --win: 52 199 130;
-  --loss: 235 87 110;
-  --draw: 130 138 156;
-  --on-accent: 8 9 13;
+  --live: 250 82 55;
+  --win: 129 182 76; /* chess.com green */
+  --loss: 227 90 108;
+  --draw: 141 137 128;
+  --on-accent: 26 24 20;
 
-  /* ---- Accent: gold (default) ---- */
+  /* ---- Accent: grandmaster gold (default) ---- */
   --gold-50: 251 246 233;
   --gold-100: 244 230 191;
   --gold-200: 236 210 138;
   --gold-300: 227 189 87;
   --gold-400: 216 167 58;
   --gold-500: 194 143 42;
-  --gold-600: 156 112 32;
+  --gold-600: 150 108 28;
 }
 
 [data-theme="light"] {
-  --ink-950: 246 244 238; /* page */
+  --ink-950: 243 240 233; /* page */
   --ink-900: 255 255 255; /* inputs */
   --ink-850: 255 255 255; /* panels */
-  --ink-800: 243 240 233; /* insets */
-  --ink-700: 224 219 208; /* borders */
-  --ink-600: 203 197 184;
-  --ink-500: 150 144 130;
-  --cream: 28 27 24; /* primary text */
-  --muted: 99 104 114;
+  --ink-800: 240 236 227; /* insets */
+  --ink-700: 222 216 204; /* borders */
+  --ink-600: 197 190 176;
+  --ink-500: 146 140 128;
+  --cream: 33 31 27; /* primary text */
+  --muted: 106 102 94;
   --hairline: 20 20 20;
 }
 
 /* ---- Alternate accents ---- */
 [data-accent="emerald"] {
-  --gold-50: 236 253 245; --gold-100: 209 250 229; --gold-200: 167 243 208;
-  --gold-300: 110 231 183; --gold-400: 52 211 153; --gold-500: 16 185 129; --gold-600: 5 150 105;
+  /* "club green" — the chess.com green family */
+  --gold-50: 243 249 236; --gold-100: 226 240 207; --gold-200: 200 227 164;
+  --gold-300: 168 210 114; --gold-400: 129 182 76; --gold-500: 106 155 62; --gold-600: 77 116 44;
 }
 [data-accent="sky"] {
   --gold-50: 240 249 255; --gold-100: 224 242 254; --gold-200: 186 230 253;
-  --gold-300: 125 211 252; --gold-400: 56 189 248; --gold-500: 14 165 233; --gold-600: 2 132 199;
+  --gold-300: 125 211 252; --gold-400: 56 189 248; --gold-500: 14 165 233; --gold-600: 3 105 161;
 }
 [data-accent="violet"] {
   --gold-50: 245 243 255; --gold-100: 237 233 254; --gold-200: 221 214 254;
-  --gold-300: 196 181 253; --gold-400: 167 139 250; --gold-500: 139 92 246; --gold-600: 124 58 237;
+  --gold-300: 196 181 253; --gold-400: 167 139 250; --gold-500: 139 92 246; --gold-600: 109 40 217;
 }
 [data-accent="rose"] {
   --gold-50: 255 241 242; --gold-100: 255 228 230; --gold-200: 254 205 211;
-  --gold-300: 253 164 175; --gold-400: 251 113 133; --gold-500: 244 63 94; --gold-600: 225 29 72;
+  --gold-300: 253 164 175; --gold-400: 251 113 133; --gold-500: 244 63 94; --gold-600: 190 18 60;
+}
+
+/* In light mode the pale accent-text steps wash out on paper — remap them to
+   the accent's own dark steps. html[…] outranks the [data-accent] blocks, and
+   var() resolves per-accent, so this works for every accent color. */
+html[data-theme="light"] {
+  --gold-100: var(--gold-500);
+  --gold-200: var(--gold-600);
+  --gold-300: var(--gold-600);
+  --win: 97 143 47; /* darker club green for text on paper */
 }
 
 @layer base {
@@ -74,8 +85,8 @@
   body {
     @apply bg-ink-950 text-cream font-sans antialiased;
     background-image:
-      radial-gradient(1100px 520px at 50% -160px, rgb(var(--gold-400) / 0.10), transparent 62%),
-      radial-gradient(900px 500px at 100% 0, rgb(var(--ink-500) / 0.10), transparent 55%);
+      radial-gradient(1100px 480px at 50% -180px, rgb(var(--gold-400) / 0.08), transparent 62%),
+      radial-gradient(900px 500px at 100% 0, rgb(var(--ink-500) / 0.08), transparent 55%);
     background-attachment: fixed;
     min-height: 100vh;
     transition: background-color 0.3s ease, color 0.3s ease;
@@ -94,53 +105,137 @@
   *::-webkit-scrollbar-thumb {
     @apply bg-ink-600 rounded-full;
   }
+  @media (prefers-reduced-motion: reduce) {
+    *,
+    *::before,
+    *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+    }
+  }
 }
 
 @layer components {
   .panel {
-    @apply rounded-2xl border border-ink-700/60 bg-ink-850/80 shadow-panel backdrop-blur-sm;
+    @apply rounded-2xl border border-ink-700/50 bg-ink-850 shadow-panel;
   }
   .panel-flat {
-    @apply rounded-xl border border-ink-700/55 bg-ink-850/60;
+    @apply rounded-xl border border-ink-700/45 bg-ink-850;
   }
   .chip {
-    @apply inline-flex items-center gap-1.5 rounded-full border border-ink-600/60 bg-ink-800/60 px-2.5 py-1 text-xs font-medium text-muted;
+    @apply inline-flex items-center gap-1.5 rounded-full border border-ink-600/50 bg-ink-800/70 px-2.5 py-1 text-xs font-semibold text-muted;
   }
   .label {
-    @apply text-[11px] font-semibold uppercase tracking-[0.14em] text-muted;
+    @apply text-[11px] font-bold uppercase tracking-[0.14em] text-muted;
   }
   .btn {
-    @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition
+    @apply inline-flex items-center justify-center gap-2 rounded-[10px] px-4 py-2.5 text-sm font-bold transition-all
       focus:outline-none focus-visible:ring-2 focus-visible:ring-gold-300/60 disabled:cursor-not-allowed disabled:opacity-50;
   }
+  /* Signature chunky button — solid face, darker bottom edge, presses down. */
   .btn-gold {
-    @apply btn bg-gold-sheen text-onaccent shadow-glow hover:brightness-[1.07] active:brightness-95;
+    @apply btn bg-gold-400 text-onaccent shadow-[0_4px_0_0_rgb(var(--gold-600))]
+      hover:brightness-105 active:translate-y-[3px] active:shadow-[0_1px_0_0_rgb(var(--gold-600))];
   }
   .btn-ghost {
-    @apply btn border border-ink-600/70 bg-ink-800/40 text-cream hover:border-gold-300/50 hover:bg-ink-700/50;
+    @apply btn border border-ink-600/50 bg-ink-800 text-cream shadow-[0_4px_0_0_rgb(var(--ink-600)/0.55)]
+      hover:border-gold-300/40 active:translate-y-[3px] active:shadow-none;
   }
   .btn-subtle {
-    @apply btn bg-ink-700/55 text-cream hover:bg-ink-600/60;
+    @apply btn bg-ink-700/60 text-cream hover:bg-ink-600/60;
   }
   .input {
-    @apply w-full rounded-xl border border-ink-600/70 bg-ink-900/70 px-3.5 py-2.5 text-sm text-cream
+    @apply w-full rounded-[10px] border border-ink-600/60 bg-ink-900 px-3.5 py-2.5 text-sm text-cream
       placeholder:text-muted/70 focus:border-gold-300/60 focus:outline-none focus:ring-2 focus:ring-gold-300/20;
   }
   .field-label {
-    @apply mb-1.5 block text-[11px] font-semibold uppercase tracking-[0.14em] text-muted;
+    @apply mb-1.5 block text-[11px] font-bold uppercase tracking-[0.14em] text-muted;
   }
-  /* Subtle dotted texture for hero / empty states (theme-aware) */
+  /* Subtle dotted texture for empty states */
   .board-texture {
     background-image: radial-gradient(rgb(var(--muted) / 0.10) 1px, transparent 1px);
     background-size: 22px 22px;
+  }
+  /* A real 8×8 checkerboard wash, for hero flourishes */
+  .board-8 {
+    background-image: conic-gradient(
+      rgb(var(--cream) / 0.05) 90deg,
+      transparent 90deg 180deg,
+      rgb(var(--cream) / 0.05) 180deg 270deg,
+      transparent 270deg
+    );
+    background-size: 112px 112px;
   }
 }
 
 @layer utilities {
   .text-gradient-gold {
-    @apply bg-gold-sheen bg-clip-text text-transparent;
+    background-image: linear-gradient(
+      135deg,
+      rgb(var(--gold-200)) 0%,
+      rgb(var(--gold-400)) 55%,
+      rgb(var(--gold-500)) 100%
+    );
+    @apply bg-clip-text text-transparent;
   }
   .animate-in {
     @apply animate-fade-up;
   }
+}
+
+/* ---- Motion ---- */
+@keyframes float-piece {
+  from {
+    transform: translateY(-10px) rotate(-5deg);
+  }
+  to {
+    transform: translateY(12px) rotate(4deg);
+  }
+}
+.animate-float {
+  animation: float-piece 8s ease-in-out infinite alternate;
+}
+
+@keyframes confetti-fall {
+  0% {
+    transform: translate3d(0, -6vh, 0) rotate(0deg);
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    transform: translate3d(var(--drift, 0px), 108vh, 0) rotate(720deg);
+    opacity: 0;
+  }
+}
+
+@keyframes crown-pop {
+  0% {
+    transform: scale(0.4) rotate(-14deg);
+    opacity: 0;
+  }
+  60% {
+    transform: scale(1.15) rotate(4deg);
+  }
+  100% {
+    transform: scale(1) rotate(0deg);
+    opacity: 1;
+  }
+}
+.animate-crown {
+  animation: crown-pop 0.7s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes connector-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.connector {
+  animation: connector-in 0.6s ease-out both;
 }

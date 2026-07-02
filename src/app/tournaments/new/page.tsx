@@ -40,6 +40,7 @@ export default function NewTournamentPage() {
   const [rules, setRules] = useState<Rules>(() => defaultRules("round_robin"));
   const [rounds, setRounds] = useState(0);
   const [duration, setDuration] = useState(14);
+  const [doubleRR, setDoubleRR] = useState(false);
   const [seedByRating, setSeedByRating] = useState(true);
   const [creating, setCreating] = useState(false);
   const [suggesting, setSuggesting] = useState(false);
@@ -91,6 +92,7 @@ export default function NewTournamentPage() {
         rules,
         plannedRounds: format === "swiss" ? effRounds : undefined,
         durationDays: duration,
+        cycles: format === "round_robin" && doubleRR ? 2 : 1,
       });
       // Attach hydrated Chess.com info (order is preserved by createTournament).
       t.players.forEach((tp, i) => {
@@ -145,6 +147,17 @@ export default function NewTournamentPage() {
       <section className="panel p-5">
         <Step n={2} title="Format" hint="Round robin is the base — switch any time before you start." />
         <FormatPicker value={format} onChange={setFormat} />
+        {format === "round_robin" && (
+          <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm text-muted">
+            <input
+              type="checkbox"
+              checked={doubleRR}
+              onChange={(e) => setDoubleRR(e.target.checked)}
+              className="h-4 w-4 accent-gold-400"
+            />
+            Double round robin — everyone plays everyone twice, colors reversed
+          </label>
+        )}
         {isElim && (
           <label className="mt-4 flex cursor-pointer items-center gap-2 text-sm text-muted">
             <input

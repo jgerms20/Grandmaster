@@ -10,16 +10,20 @@ Set up a tournament once, drop in your players, pick a format, and Grandmaster b
 
 ## Highlights
 
-- **Four formats, one base.** Round robin (the default), plus single elimination, double elimination, and Swiss — all selectable when you create a tournament.
-- **A bracket / standings table everyone can watch live.** Real‑time updates across every device.
-- **Match cards** show colors (♔/♚), live status, a ticking clock, move count, and a **Watch on Chess.com** link.
-- **ESPN-style bracket.** In organizer mode, just **click a player to advance them**.
-- **Chess.com integration.** Type a username *or paste a profile link* and it pulls the player's avatar, title, rating, and country flag from the public API; brackets can be auto‑seeded by rating.
-- **Smart rule suggestions.** One tap tailors the scoring, pace, tiebreak and a written rules summary to your format, field size and length — plus a free‑text *"describe your own rules"* box.
+- **Four formats, one base.** Round robin (single **or double**, colors reversed), plus single elimination, double elimination, and Swiss.
+- **A real bracket** with connector lines joining the rounds — in organizer mode, **click a player to advance them**, ESPN-style. Confetti when a champion is crowned.
+- **Game sync from Chess.com.** One tap on a match finds the actual daily game between the two players — attaches the watch link, move count, and whose turn it is — and detects **finished games to auto-apply the result**. Plus one-tap **Challenge on Chess.com** links and live ratings refresh.
+- **Invite your club.** A share modal with a watch link, an **organizer link** that auto-unlocks editing, a **QR code** for over-the-board nights, and native share.
+- **Match cards** show colors (♔/♚), live status, a ticking clock, move count, and who's to move.
+- **Chess.com identities.** Type a username *or paste a profile link* — avatars, titles, ratings, country flags; brackets can auto‑seed by rating.
+- **Smart rule suggestions.** Heuristics out of the box, or plug in your Anthropic API key for real Claude‑written rules.
+- **Editable after the fact.** Organizers can rename the event and tweak rules/deadline from a settings panel.
 - **Scheduling.** Pick a length (1 day → 4 weeks), see start/end dates and a live countdown. Daily time controls (defaulting to 3 days/move) alongside rapid/blitz/classical.
-- **Light & dark mode + accent colors.** Gold, emerald, sky, violet or rose — your pick, remembered per browser.
-- **Organizer mode.** A lightweight code gates editing, so viewers get a clean read‑only live view while the organizer records results with one tap.
+- **Light & dark mode + accent colors** (including a chess.com-green), remembered per browser.
+- **Organizer mode.** A lightweight code gates editing, so viewers get a clean read‑only live view.
 - **Zero‑config to start.** Runs immediately with a local store that syncs live across browser tabs. Add Supabase keys for real cross‑device realtime — no code changes.
+
+> The invite QR code is rendered via `api.qrserver.com` (a plain `<img>`); if that host is unreachable the modal falls back to copy-the-link text.
 
 ---
 
