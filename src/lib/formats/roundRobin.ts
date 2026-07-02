@@ -41,17 +41,22 @@ export function roundRobinPairings(
   return rounds;
 }
 
-export function generateRoundRobin(players: readonly Player[]): Match[] {
+/**
+ * Generate a round robin. With `cycles = 2` (double round robin) every pairing
+ * repeats in the second half with colors reversed.
+ */
+export function generateRoundRobin(players: readonly Player[], cycles = 1): Match[] {
   const ids = bySeed(players).map((p) => p.id);
   const rounds = roundRobinPairings(ids);
   const matches: Match[] = [];
-  rounds.forEach((pairs, r) => {
+
+  const emit = (pairs: (typeof rounds)[number], round: number, flip: boolean) => {
     pairs.forEach((pair, i) => {
       if (pair.black === null) {
         // Sit-out bye in round robin: no points awarded.
         matches.push(
           mkMatch({
-            round: r + 1,
+            round,
             order: i,
             whiteId: pair.white,
             blackId: null,
@@ -60,11 +65,16 @@ export function generateRoundRobin(players: readonly Player[]): Match[] {
           }),
         );
       } else {
-        matches.push(
-          mkMatch({ round: r + 1, order: i, whiteId: pair.white, blackId: pair.black }),
-        );
+        const white = flip ? pair.black : pair.white;
+        const black = flip ? pair.white : pair.black;
+        matches.push(mkMatch({ round, order: i, whiteId: white, blackId: black }));
       }
     });
-  });
+  };
+
+  rounds.forEach((pairs, r) => emit(pairs, r + 1, false));
+  if (cycles >= 2) {
+    rounds.forEach((pairs, r) => emit(pairs, rounds.length + r + 1, true));
+  }
   return matches;
 }

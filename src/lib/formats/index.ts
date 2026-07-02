@@ -117,10 +117,14 @@ function isElim(format: Format): boolean {
   return format === "single_elim" || format === "double_elim";
 }
 
-function generateMatches(format: Format, players: Player[]): Match[] {
+function clampCycles(n?: number): number {
+  return n && n >= 2 ? 2 : 1;
+}
+
+function generateMatches(format: Format, players: Player[], cycles: number): Match[] {
   switch (format) {
     case "round_robin":
-      return generateRoundRobin(players);
+      return generateRoundRobin(players, cycles);
     case "single_elim": {
       const m = generateSingleElim(players);
       normalizeElim(m);
@@ -143,6 +147,8 @@ export interface CreateInput {
   rules?: Partial<Rules>;
   plannedRounds?: number;
   durationDays?: number;
+  /** Round robin only: 2 = double round robin (colors reversed). */
+  cycles?: number;
   adminCode?: string;
 }
 
@@ -155,7 +161,8 @@ export function createTournament(input: CreateInput): Tournament {
   }));
 
   const rules: Rules = { ...defaultRules(input.format), ...input.rules };
-  const matches = generateMatches(input.format, players);
+  const cycles = input.format === "round_robin" ? clampCycles(input.cycles) : 1;
+  const matches = generateMatches(input.format, players, cycles);
   const plannedRounds =
     input.format === "swiss"
       ? input.plannedRounds || swissRecommendedRounds(players.length)
@@ -178,6 +185,7 @@ export function createTournament(input: CreateInput): Tournament {
     startDate: now,
     endDate,
     durationDays,
+    cycles,
     createdAt: now,
     updatedAt: now,
     adminCode: input.adminCode?.trim() || uid().slice(0, 6),
@@ -219,6 +227,7 @@ export function setMatchResult(
 
   m.result = result;
   m.status = result === null ? "pending" : "done";
+  m.turn = undefined; // a decided (or reset) game has no "to move"
   if (opts.moves !== undefined) m.moves = opts.moves;
   if (opts.gameUrl !== undefined) m.gameUrl = opts.gameUrl;
   if (result !== null) m.endedAt = nowIso();
@@ -269,13 +278,35 @@ export function setMatchLive(tournament: Tournament, matchId: string, live: bool
 export function setMatchMeta(
   tournament: Tournament,
   matchId: string,
-  meta: { gameUrl?: string; moves?: number },
+  meta: { gameUrl?: string; moves?: number; turn?: "white" | "black" | null },
 ): Tournament {
   const t = clone(tournament);
   const m = t.matches.find((x) => x.id === matchId);
   if (!m) return t;
   if (meta.gameUrl !== undefined) m.gameUrl = meta.gameUrl || undefined;
   if (meta.moves !== undefined) m.moves = meta.moves;
+  if (meta.turn !== undefined) m.turn = meta.turn ?? undefined;
+  t.updatedAt = nowIso();
+  return t;
+}
+
+export interface SettingsPatch {
+  name?: string;
+  rules?: Partial<Rules>;
+  durationDays?: number;
+}
+
+/** Organizer edits after creation: rename, tweak rules, change the deadline. */
+export function updateSettings(tournament: Tournament, patch: SettingsPatch): Tournament {
+  const t = clone(tournament);
+  if (patch.name !== undefined && patch.name.trim()) t.name = patch.name.trim();
+  if (patch.rules) t.rules = { ...t.rules, ...patch.rules };
+  if (patch.durationDays !== undefined) {
+    t.durationDays = Math.max(0, patch.durationDays);
+    const startMs = new Date(t.startDate ?? t.createdAt).getTime();
+    t.endDate =
+      t.durationDays > 0 ? new Date(startMs + t.durationDays * 86400000).toISOString() : undefined;
+  }
   t.updatedAt = nowIso();
   return t;
 }

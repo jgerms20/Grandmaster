@@ -63,6 +63,8 @@ export interface Match {
   startedAt?: string; // ISO
   endedAt?: string; // ISO
   moves?: number;
+  /** For live daily games: which side (in OUR color assignment) is to move. */
+  turn?: Color;
 
   // Bracket wiring (elimination formats): where the winner / loser flows next.
   winnerTo?: { matchId: string; slot: Color } | null;
@@ -106,6 +108,8 @@ export interface Tournament {
   endDate?: string;
   /** Intended length in days (0 = no deadline). */
   durationDays?: number;
+  /** Round robin only: 1 = single, 2 = double (colors reversed). */
+  cycles?: number;
   createdAt: string;
   updatedAt: string;
   /** Lightweight edit gate — anyone with the code can run the tournament. */
